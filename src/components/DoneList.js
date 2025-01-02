@@ -1,16 +1,14 @@
 import React from "react";
 
-// Component to render the Done list
 const DoneList = ({ tasks }) => {
   return (
-    <div>
-      <h2>Done List</h2>
-      <ul>
-        {tasks.map((task) => (
-          <li key={task.id}>{task.description}</li>
-        ))}
-      </ul>
-    </div>
+    <ul> {/* Render the completed tasks as a list */}
+      {tasks.map((task) => ( // Iterate over the completed tasks
+        <li key={task.id}> {/* Each completed task item */}
+          {task.description} {/* Display the task description */}
+        </li>
+      ))}
+    </ul>
   );
 };
 
