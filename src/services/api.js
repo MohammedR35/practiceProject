@@ -1,34 +1,37 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:8080/tasks"; // Backend API base URL
+const API_URL = "http://localhost:8080/tasks";
 
-// Function to fetch all tasks from the backend
 export const fetchTasks = async () => {
   try {
-    const response = await axios.get(API_URL); // Make a GET request to fetch tasks
-    return response.data; // Return the list of tasks
+    const response = await axios.get(API_URL);
+    console.log('API Response:', response.data); // Debug log
+    // Ensure we always return an array
+    return Array.isArray(response.data) ? response.data : [];
   } catch (error) {
-    console.error("Error fetching tasks:", error); // Log any errors
+    console.error("Error fetching tasks:", error);
     return [];
   }
 };
 
-// Function to add a new task to the backend
 export const saveTask = async (description) => {
   try {
-    await axios.post(API_URL, description, { // Make a POST request to add a task
-      headers: { "Content-Type": "text/plain" }, // Send the task as plain text
-    });
+    const response = await axios.post(API_URL, { description });
+    console.log('Save Task Response:', response.data); // Debug log
+    return response.data;
   } catch (error) {
-    console.error("Error adding task:", error); // Log any errors
+    console.error("Error adding task:", error);
+    throw error;
   }
 };
 
-// Function to mark a task as done
 export const markAsDone = async (id) => {
   try {
-    await axios.put(`${API_URL}/${id}`); // Make a PUT request to update the task status
+    const response = await axios.put(`${API_URL}/${id}`);
+    console.log('Mark Done Response:', response.data); // Debug log
+    return response.data;
   } catch (error) {
-    console.error("Error marking task as done:", error); // Log any errors
+    console.error("Error marking task as done:", error);
+    throw error;
   }
 };

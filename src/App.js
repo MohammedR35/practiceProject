@@ -1,60 +1,112 @@
 import React, { useState, useEffect } from "react";
-import "./App.css"; // Import the CSS file for styling
-import Header from "./components/Header"; // Header component
-import InputBox from "./components/InputBox"; // Input box component
-import ToDoList from "./components/ToDoList"; // To-Do list component
-import DoneList from "./components/DoneList"; // Done list component
-import { fetchTasks, saveTask, markAsDone } from "./services/api"; // API functions
+import "./App.css";
+import { fetchTasks, saveTask, markAsDone } from "./services/api";
 
 const App = () => {
-  const [tasks, setTasks] = useState([]); // State for storing tasks
-  const [showToDo, setShowToDo] = useState(true); // State for toggling between To-Do and Done lists
+  const [tasks, setTasks] = useState([]);
+  const [showToDo, setShowToDo] = useState(true);
+  const [newTask, setNewTask] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  // Fetch tasks from the backend when the component is mounted
   useEffect(() => {
     loadTasks();
   }, []);
 
-  // Function to fetch tasks and update the state
   const loadTasks = async () => {
-    const data = await fetchTasks();
-    setTasks(data);
+    try {
+      setLoading(true);
+      const data = await fetchTasks();
+      setTasks(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Error loading tasks:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Function to add a new task
-  const addTask = async (description) => {
-    await saveTask(description); // Call the API to save the task
-    loadTasks(); // Refresh the list of tasks
+  const handleAddTask = async () => {
+    if (!newTask.trim()) return;
+    try {
+      await saveTask(newTask.trim());
+      setNewTask('');
+      await loadTasks();
+    } catch (err) {
+      console.error('Error adding task:', err);
+    }
   };
 
-  // Function to mark a task as done
   const handleMarkAsDone = async (id) => {
-    await markAsDone(id); // Call the API to update the task status
-    loadTasks(); // Refresh the list of tasks
+    try {
+      await markAsDone(id);
+      await loadTasks();
+    } catch (err) {
+      console.error('Error marking task as done:', err);
+    }
   };
+
+  const todoTasks = tasks.filter(task => !task?.isDone) || [];
+  const doneTasks = tasks.filter(task => task?.isDone) || [];
 
   return (
-    <div className="container"> {/* Apply the styling defined in App.css */}
-      <Header /> {/* Render the header */}
-      <InputBox addTask={addTask} /> {/* Render the input box for adding tasks */}
-
-      {/* Buttons to toggle between the To-Do list and Done list */}
-      <div className="list-buttons">
-        <button onClick={() => setShowToDo(true)}>To-Do List</button>
-        <button onClick={() => setShowToDo(false)}>Done List</button>
+    <div className="container">
+      <h1>Daily Needs</h1>
+      
+      <div className="input-container">
+        <input
+          type="text"
+          placeholder="What needs to be done?"
+          value={newTask}
+          onChange={(e) => setNewTask(e.target.value)}
+          onKeyPress={(e) => {
+            if (e.key === 'Enter') {
+              handleAddTask();
+            }
+          }}
+        />
+        <button className="add-button" onClick={handleAddTask}>Add</button>
       </div>
 
-      {/* Conditionally render the To-Do list or Done list based on the toggle */}
-      {showToDo ? (
-        <ToDoList
-          tasks={tasks.filter((task) => !task.isDone)} // Filter tasks to show only incomplete ones
-          markAsDone={handleMarkAsDone} // Pass the function to mark tasks as done
-        />
-      ) : (
-        <DoneList
-          tasks={tasks.filter((task) => task.isDone)} // Filter tasks to show only completed ones
-        />
-      )}
+      <div className="list-buttons">
+        <button 
+          onClick={() => setShowToDo(true)}
+          className={showToDo ? 'active' : ''}
+        >
+          To-Do List
+        </button>
+        <button 
+          onClick={() => setShowToDo(false)}
+          className={!showToDo ? 'active' : ''}
+        >
+          Done List
+        </button>
+      </div>
+
+      <div className="task-list">
+        <h2>{showToDo ? 'To-Do List' : 'Done List'}</h2>
+        {loading ? (
+          <p className="empty-message">Loading...</p>
+        ) : (showToDo ? todoTasks : doneTasks).length === 0 ? (
+          <p className="empty-message">
+            {showToDo ? 'No tasks to do' : 'No completed tasks'}
+          </p>
+        ) : (
+          <ul>
+            {(showToDo ? todoTasks : doneTasks).map((task, index) => (
+              <li key={task._id}>
+                <span>{`${index + 1}. ${task.description}`}</span>
+                {showToDo && (
+                  <button 
+                    className="check-button"
+                    onClick={() => handleMarkAsDone(task._id)}
+                  >
+                    ✓
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   );
 };
